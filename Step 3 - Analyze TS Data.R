@@ -18,6 +18,15 @@ big_property_data <- read_rds("big_property_data.rds")
 
 
 
+# Submarket - Eff Rent TS -------------------------------------------------
+
+
+test <- big_property_data %>%
+        filter(comparable_monthly_MOM == TRUE) %>%
+        group_by(Submarket, Date) %>%
+        summarize(eff_rent = sum( total_rent ) / sum( Quantity) )
+
+
 
 
 

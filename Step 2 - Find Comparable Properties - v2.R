@@ -211,6 +211,31 @@ big_property_data <- big_property_data %>%
                             occupied_units = as.numeric(Occupancy) * as.numeric(Quantity))
 
 
+# Let's go ahead and fix the names
+names(big_property_data) <- str_to_lower(names(big_property_data))
+names(big_property_info) <- str_to_lower(names(big_property_info))
+
+# replace the % sign
+names(big_property_data) <- str_replace_all(names(big_property_data), 
+                                            pattern = "\\%", 
+                                            replacement = "percent")
+
+
+
+# I need to actually convert several columns to the correct data type
+big_property_data <- big_property_data %>%
+                     mutate(asking_rent = as.numeric(asking_rent),
+                            effective_rent = as.numeric(effective_rent),
+                            effective_rent_per_sq_ft = as.numeric(effective_rent_per_sq_ft),
+                            cocession_percent = as.numeric(concession_percent),
+                            concession_value = as.numeric(concession_value),
+                            occupancy = as.numeric(occupancy),
+                            quantity = as.numeric(quantity),
+                            areaperunit = as.numeric(areaperunit))
+  
+  
+  
+
 # This is also temporary while finishing the script for Step 2
 write_rds(big_property_data, "big_property_data.rds")
 write_rds(big_property_info, "big_property_info.rds")

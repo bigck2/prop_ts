@@ -146,8 +146,6 @@ big_property_data <- big_property_data %>%
 
 # Quarterly Comparable QoQ ------------------------------------------------
 
-
-
 big_property_data <- big_property_data %>%
                       mutate(prior_quarter_date = Date - months(3),
                              prior_quarter = quarter(prior_quarter_date, 
@@ -171,11 +169,7 @@ big_property_data <- big_property_data %>%
 
 
 
-
-
 # Prep for analysis ----------------------------------------------------
-
-
 
 # Drop intermediate variables
 
@@ -195,6 +189,36 @@ big_property_data <- big_property_data %>%
 rm(bad_variables)
 
 
+
+# Create a tmp tbl with variables I plan to join to big_property_data
+
+my_vars <- c("ProjID","Name", "Msa_Name", "Submarket", "Quantity", "AreaPerUnit")
+
+tmp <- big_property_info %>%
+       select(one_of(my_vars))
+
+# Join these variables to big_property_data
+big_property_data <- left_join(big_property_data, tmp)
+
+rm(tmp, my_vars)
+
+
+# We need to add a few calculated columns
+# first convert to numeric data types
+big_property_data <- big_property_data %>%
+                     mutate(total_sf = as.numeric(Quantity) * as.numeric(AreaPerUnit),
+                            total_rent = as.numeric(Effective_Rent) * as.numeric(Quantity),
+                            occupied_units = as.numeric(Occupancy) * as.numeric(Quantity))
+
+
+# This is also temporary while finishing the script for Step 2
+write_rds(big_property_data, "big_property_data.rds")
+write_rds(big_property_info, "big_property_info.rds")
+
+
+
+
+
 # Ideas -------------------------------------------------------------------
 
 
@@ -205,6 +229,8 @@ rm(bad_variables)
 # IDEA: This idea above would probably have worked for the quarters, I could test this to see
 # if I get the same result, but it would be a little bit trickier and my script currently
 # works so there may not be a big benefit
+
+
 
 
 

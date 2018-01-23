@@ -185,8 +185,8 @@ rm(list= ls()[!(ls() %in% c('big_property_data','big_property_info'))])
 
 
 # This step may not be necessary
-write_csv(big_property_data, "big_property_data.csv")
-write_csv(big_property_info, "big_property_info.csv")
+# write_csv(big_property_data, "big_property_data.csv")
+# write_csv(big_property_info, "big_property_info.csv")
 
 
 

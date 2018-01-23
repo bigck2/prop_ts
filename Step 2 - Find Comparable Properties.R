@@ -7,6 +7,7 @@ big_property_data <- read_rds("big_property_data.rds")
 
 
 
+
 # Comparable YOY ----------------------------------------------------------
 
 # add a column for prior year month
@@ -60,19 +61,9 @@ rm(tmp)
 
 # Determine if every month in Quarter is comparable -----------------------
 
-# Note I think I have to do each month seperately to do the joins correctly
-# Not sure though I might be able to cleverly do both at once
-
-# Note I don't hink I actually need to determine prior_month_3 or prior_month_3_status
-
-# Note I will probably need a lubridate function to get the Year-Quarter
-
-
-
 # add a column for prior_month_2
 big_property_data <- big_property_data %>%
                      mutate(prior_month_2 = Date - months(2))
-                            
 
 # Create a tmp tbl with mutated columns to join on
 tmp <- big_property_data %>%
@@ -80,29 +71,10 @@ tmp <- big_property_data %>%
         rename(prior_month_2 = Date,
                prior_month_2_status = Property_Status)
 
-
 # Now join the tmp tbl to big_property_data
 big_property_data <- left_join(big_property_data, tmp)
 
 rm(tmp)
-
-# TODO Delete this section after confirming it isn't needed.
-      # # add a column for prior_month_3
-      # big_property_data <- big_property_data %>%
-      #                       mutate(prior_month_3 = Date - months(3))
-      # 
-      # 
-      # # Create a tmp tbl with mutated columns to join on
-      # tmp <- big_property_data %>%
-      #         select(ProjID, Date, Property_Status) %>%
-      #         rename(prior_month_3 = Date,
-      #                prior_month_3_status = Property_Status)
-      # 
-      # # Now join the tmp tbl to big_property_data
-      # big_property_data <- left_join(big_property_data, tmp)
-      # 
-      # rm(tmp)
-
 
 # To determine if the property is comparable I only need to look 
 # at the last month of each quarter (Mar, Jun, Sep, Dec)
@@ -112,20 +84,85 @@ rm(tmp)
 big_property_data <- big_property_data %>%
                      mutate(current_quarter = quarter(Date, with_year = TRUE))
 
-
-
+# Add a month_no columns, filter to end of quarter months,
+# then check to make sure property_status, prior_month_status, and prior_month_2_status
+# are all Stabilized. Lastlty select key columns to use in join
 tmp <- big_property_data %>%
        mutate(month_no = month(Date)) %>%
        filter(month_no %in% c(3, 6, 9, 12)) %>%
        mutate(quarterly_stabilized = ((Property_Status == "S") & (prior_month_status == "S") & (prior_month_2_status == "S"))) %>%
        select(ProjID, current_quarter, quarterly_stabilized)
 
-View(tmp)
+# Now join the tmp tbl to big_property_data
+big_property_data <- left_join(big_property_data, tmp)
 
+rm(tmp)
+
+
+
+
+# Quarterly Comparable YOY ------------------------------------------------
+
+# In order to find the prior year quarter or prior sequential quarter I should modify the
+# date variable. To shift back to prior quarter subtract months(3), to find prior year
+# quarter subtract years(1)
+# Then calculate quarter
+
+big_property_data <- big_property_data %>%
+                     mutate(prior_year_quarter_date = Date - years(1),
+                            prior_year_quarter = quarter(prior_year_quarter_date, 
+                                                         with_year = TRUE) )
+
+# Here I think I need to add a date column, so the join will use ProjID, prior_year_quarter,
+# and date
+# With only ProjID and prior_year_quarter we get repeated rows
+
+tmp <- big_property_data %>%
+        select(ProjID, Date, quarterly_stabilized) %>%
+        rename(prior_year_quarter_date = Date,
+               prior_year_quarterly_stabilized = quarterly_stabilized)
 
 big_property_data <- left_join(big_property_data, tmp)
 
 rm(tmp)
+
+
+# Now we can check to make sure the property is comparable to the 
+# same quarter prior year
+big_property_data <- big_property_data %>%
+                     mutate(qtrly_comparable_YOY = (quarterly_stabilized & prior_year_quarterly_stabilized))
+
+
+
+
+# Quarterly Comparable QoQ ------------------------------------------------
+
+
+
+big_property_data <- big_property_data %>%
+                      mutate(prior_quarter_date = Date - months(3),
+                             prior_quarter = quarter(prior_quarter_date, 
+                                                          with_year = TRUE) )
+
+
+tmp <- big_property_data %>%
+        select(ProjID, Date, quarterly_stabilized) %>%
+        rename(prior_quarter_date = Date,
+               prior_quarter_stabilized = quarterly_stabilized)
+
+big_property_data <- left_join(big_property_data, tmp)
+
+rm(tmp)
+
+# Now we can check to make sure the property is comparable to the 
+# prior quarter
+big_property_data <- big_property_data %>%
+                      mutate(qtrly_comparable_QOQ = (quarterly_stabilized & prior_quarter_stabilized))
+
+
+
+
+
 
 
 

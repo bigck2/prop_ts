@@ -34,7 +34,7 @@ big_property_data <- left_join(big_property_data, tmp)
 
 # Determine if the property should be designated comparable_YOY
 big_property_data <- big_property_data %>%
-                     mutate(comparable_YOY = (Property_Status == "S") & (prior_year_status == "S"))
+                     mutate(comparable_monthly_YOY = (Property_Status == "S") & (prior_year_status == "S"))
 
 rm(tmp)
 
@@ -60,7 +60,7 @@ big_property_data <- left_join(big_property_data, tmp)
 
 # Determine if the property should be designated comparable_MOM
 big_property_data <- big_property_data %>%
-                      mutate(comparable_MOM = (Property_Status == "S") & (prior_month_status == "S") )
+                      mutate(comparable_monthly_MOM = (Property_Status == "S") & (prior_month_status == "S") )
 
 rm(tmp)
 
@@ -139,7 +139,7 @@ rm(tmp)
 # Now we can check to make sure the property is comparable to the 
 # same quarter prior year
 big_property_data <- big_property_data %>%
-                     mutate(qtrly_comparable_YOY = (quarterly_stabilized & prior_year_quarterly_stabilized))
+                     mutate(comparable_qtr_YOY = (quarterly_stabilized & prior_year_quarterly_stabilized))
 
 
 
@@ -166,26 +166,59 @@ rm(tmp)
 # Now we can check to make sure the property is comparable to the 
 # prior quarter
 big_property_data <- big_property_data %>%
-                      mutate(qtrly_comparable_QOQ = (quarterly_stabilized & prior_quarter_stabilized))
+                      mutate(comparable_qtr_QOQ = (quarterly_stabilized & prior_quarter_stabilized))
 
 
 
 
 
 
-# Finish Step 2 Script ----------------------------------------------------
+# Prep for analysis ----------------------------------------------------
 
-# TODO: Rename variables 
-# begin with comparable_monthly_YOY, comparable_monthly_MOM, 
-# comparable_qtr_YOY, comparable_qtr_QOQ
 
-# TODO: drop intermediate variables
 
+# Drop intermediate variables
+
+# Make a character vector of columns I don't need anymore
 bad_variables <- c("prior_year", "prior_year_status", "prior_month",
                    "prior_month_status", "prior_month_2", "prior_month_2_status",
                    "prior_year_quarter_date", "prior_year_quarter", 
                    "prior_year_quarterly_stabilized", "prior_quarter_date",
                    "prior_quarter", "prior_quarter_stabilized")
+
+
+# Drop these intermediate columns
+big_property_data <- big_property_data %>%
+                      select(-one_of(bad_variables)) # Had to look up this helper function one_of()
+
+
+rm(bad_variables)
+
+
+# Ideas -------------------------------------------------------------------
+
+
+# IDEA: If I seperated year and month into two seperate columns and then spread the month
+# variables into columns I think I could quickly detemine if the property
+# was stabilized for the entire year
+
+# IDEA: This idea above would probably have worked for the quarters, I could test this to see
+# if I get the same result, but it would be a little bit trickier and my script currently
+# works so there may not be a big benefit
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

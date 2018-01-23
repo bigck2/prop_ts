@@ -189,8 +189,9 @@ rm(list= ls()[!(ls() %in% c('big_property_data','big_property_info'))])
 # write_csv(big_property_info, "big_property_info.csv")
 
 
-
-
+# This is also temporary while finishing the script for Step 2
+write_rds(big_property_data, "big_property_data.rds")
+write_rds(big_property_info, "big_property_info.rds")
 
 
 

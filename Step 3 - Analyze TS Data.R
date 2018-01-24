@@ -43,12 +43,26 @@ test %>%
   View()
 
 
-# This 
+
+
+# Submarket - Annual Monthly Eff Rent TS -------------------------------------------------
+
+# Calculate Eff Rent using the comparable_monthly_mom filter
+test <- big_property_data %>%
+        filter(comparable_monthly_yoy == TRUE) %>%
+        group_by(submarket, date) %>%
+        summarize(prop_count = sum(prop_count),  # Prop count is really only useful to in my troubleshooting, TODO drop
+                  unit_count = sum(quantity),
+                  eff_rent = round(sum( total_rent ) / sum( quantity), 0 ) )
+
+
+
+# This will format the data back into a human readable layout
 test %>%
-  filter(submarket == "Carmel",
-         year(date) >= 2016) %>%
+  filter(date >= ymd("2017-09-01")) %>%
   spread(key = date, value = eff_rent) %>%
-  write_csv("test.csv")
+  View()
+
 
 
 
@@ -77,11 +91,7 @@ test %>%
 
 # Calculate Eff Rent using the comparable_monthly_mom filter
 test <- big_property_data %>%
-<<<<<<< HEAD
-        filter(comparable_qtr_yoy == TRUE) %>%
-=======
         filter(comparable_qtr_qoq == TRUE) %>%
->>>>>>> ca4c2ef479541ad3709a1feb8621c7b72de07a85
         group_by(submarket, current_quarter) %>%
         summarize(prop_count = sum(prop_count) / 3,
                   eff_rent = round( sum( total_rent ) / sum( quantity) , 0 ) )

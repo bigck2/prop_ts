@@ -33,8 +33,21 @@ my_property_info$Property_Status <- my_statuses[my_property_info$Status]
 rm(my_statuses)
 
 
-# Determine Subject Property Submarket
+# Concactenate address
+my_property_info <- my_property_info %>%
+                    mutate(add = paste0(Address, ", ", City, ", ", State, " ", Zip))
+
+
+# Determine Subject Property Submarket/Year Built/Address
 subject_submarket <- my_property_info$Submarket[my_property_info$Name == subject]
+subject_year_built <- my_property_info$YearBuilt[my_property_info$Name == subject]
+subject_address <- my_property_info$add[my_property_info$Name == subject]
+
+
+# Throw subject address onto my_property_info (for mapdist() distances later)
+my_property_info$subject_add <- subject_address
+
+
 
 
 
@@ -78,8 +91,10 @@ my_property_info$subject_dist_rank <- 1:nrow(my_property_info)
 
 
 
-
-
+# Determine Subject Property Occ/Rent/Rent_PSF
+subject_occ <- my_property_info$Occupancy[my_property_info$Name == subject]
+subject_rent <- my_property_info$Effective_Rent[my_property_info$Name == subject]
+subject_rent_psf <- my_property_info$Effective_Rent_Per_Sq_Ft[my_property_info$Name == subject]
 
 
 
@@ -130,7 +145,7 @@ ggplot(data = my_property_info,
   coord_map() +
   labs(subtitle = paste("Large Black point is the Subject property:", subject))
 
-ggsave(filename = "Plot 1 - Scatter Plot of properties by submarket.png")
+# ggsave(filename = "Plot 1 - Scatter Plot of properties by submarket.png")
 
 
 
@@ -148,7 +163,7 @@ ggmap(my_map_roadmap_10,
   guides(color = FALSE)
 
 
-ggsave(filename = "Plot 2 - City Map of properties by submarket.png")
+# ggsave(filename = "Plot 2 - City Map of properties by submarket.png")
 
 
 
@@ -169,7 +184,8 @@ ggplot(data = prop_count_by_status,
   geom_text(aes(label = Prop_Count), vjust = -0.25) +
   labs(x = NULL, y = "Properties Count", title = "Property Count by Status")
 
-ggsave(filename = "Plot 3 - Property Count by Status.png")
+
+# ggsave(filename = "Plot 3 - Property Count by Status.png")
 
 
 
@@ -188,7 +204,7 @@ ggplot(data = unit_count_by_status,
   labs(x = NULL, y = "Total Units Count", title = "Unit Count by Status")
 
 
-ggsave(filename = "Plot 4 - Unit Count by Status.png")
+# ggsave(filename = "Plot 4 - Unit Count by Status.png")
 
 rm(unit_count_by_status, prop_count_by_status)
 
@@ -222,7 +238,7 @@ ggplot(data = prop_count_by_submarket,
        subtitle = paste("The subject property", subject, "is located in the", subject_submarket, "submarket.")) +
   coord_flip() 
 
-ggsave(filename = "Plot 5 - Property Count by Submarket.png")
+# ggsave(filename = "Plot 5 - Property Count by Submarket.png")
 
 
 rm(prop_count_by_submarket)
@@ -252,7 +268,7 @@ ggplot(data = unit_count_by_submarket,
   coord_flip() 
 
 
-ggsave(filename = "Plot 6 - Unit Count by Submarket.png")
+# ggsave(filename = "Plot 6 - Unit Count by Submarket.png")
 
 
 rm(unit_count_by_submarket)
@@ -345,7 +361,7 @@ ggplot(data = submarket_occ,
             color = "black")
 
 
-ggsave(filename = "Plot 7 - Average Occupancy by Submarket.png")
+# ggsave(filename = "Plot 7 - Average Occupancy by Submarket.png")
 
 
 rm(submarket_occ)
@@ -416,7 +432,7 @@ ggplot(data = submarket_rent,
             color = "black")
 
 
-ggsave(filename = "Plot 8 - Average Rent by Submarket.png")
+# ggsave(filename = "Plot 8 - Average Rent by Submarket.png")
   
 
 rm(submarket_rent)
@@ -485,19 +501,111 @@ ggplot(data = submarket_rent_psf,
 
 
 
-ggsave(filename = "Plot 9 - Average Rent PSF by Submarket.png")
+# ggsave(filename = "Plot 9 - Average Rent PSF by Submarket.png")
+
+rm(submarket_rent_psf)
 
 
 
 
 
+#  Let's Analyze the Renovation Properties -----------------------------------
+
+# Quick Analysis of Renovation properties
+
+# Filter to Reno properties
+reno <- my_property_info %>% 
+        filter(Status == "R")
+
+
+# Histogram of Year Built for all the Renovation Properties
+ggplot(data = reno, 
+       aes(x=YearBuilt)) + 
+  geom_histogram(fill = my_blue, color = "grey") +
+  geom_vline(aes(xintercept = subject_year_built), 
+             color = "red", linetype = "longdash", size = 2) +
+  annotate(geom = "text", x = subject_year_built - 8, y = 8, 
+           label = paste(subject, "was built in", subject_year_built),
+           color = "red") +
+  labs(title = "Renovation Properties Distribution of Year Built")
+
+
+#TODO:Save plot----------------------
+
+
+
+
+# Histogram of Effective Rent for all the Renovation Properties
+ggplot(data = reno, 
+       aes(x=Effective_Rent)) + 
+  geom_histogram(fill = my_green, color = "grey") +
+  geom_vline(aes(xintercept = subject_rent), 
+             color = "red", linetype = "longdash", size = 2) +
+  annotate(geom = "text", x = subject_rent - 160, y = 8, 
+           label = paste(subject, "effective rent", scales::dollar(round(subject_rent, 0))),
+           color = "red") +
+  labs(title = "Renovation Properties Distribution of Effective Rent", 
+       x = "Effective Rent", 
+       y = "Count") +
+  scale_x_continuous(labels = scales::dollar)
+
+
+#TODO:Save plot------------------------
+
+
+reno <- rbind(reno, my_property_info[my_property_info$Name == subject,]) 
+
+
+
+
+# Make a table of Renovation Comps ----------------------------------------
+
+# # Filter to Top 10 Reno properties by Effective Rent and select needed columns
+# comp_renos <- reno %>%
+#               arrange(desc(Effective_Rent)) %>%
+#               top_n(n = 10, wt = Effective_Rent) %>%
+#               select(Name, add, Submarket, Management, YearBuilt, 
+#                      Effective_Rent, Effective_Rent_Per_Sq_Ft, Occupancy)
+# 
+# # Map the distance for this list of renovation properties and the subject property
+# comp_dist <- mapdist(from = subject_address, to = comp_renos$add)
+# 
+# # Prepare the mapdist result to join back to the comp renos list
+# comp_dist <- comp_dist %>% 
+#               rename(add = to) %>% 
+#               select(add, miles, minutes) %>% 
+#               rename(distance_miles = miles, distance_minutes = minutes)
+# 
+# comp_renos <- left_join(comp_renos, comp_dist)
+# 
+# rm(comp_dist)
+# 
+# # Sort by distance
+# comp_renos <- comp_renos %>% arrange(distance_miles)
+# 
+# 
+# # TODO: Print a pretty table of the nearby comp_renos
+# View(comp_renos)
+
+
+
+# TODO: Remove some uneeded variables here
+rm(reno, comp_dist, comp_renos, dat)
 
 
 
 
 
+# Analsysis of lease up properties ----------------------------------------
 
 
+
+# Before dat was filtered for Stabilized, now we will filter for subject property or not Stabilized
+
+dat <- my_property_info %>%
+       filter(Name == subject | Status != "S")
+
+table(dat$Property_Status)
 
 
 
